@@ -1,58 +1,84 @@
 import ifcopenshell
 import ifcopenshell.util.placement
+import ifcopenshell.geom
 import numpy as np
+import json
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import open3d as o3d
 
 model = ifcopenshell.open('model.ifc')
-
+settings = ifcopenshell.geom.settings()
 walls = model.by_type('IfcWall')
+
+
 doors = model.by_type('IfcDoor')
+
 columns = model.by_type('IfcColumn')
 
-# Listas para almacenar las coordenadas, colores y etiquetas
+# Listas para almacenar las coordenadas
 all_coordinates = []
-all_colors = []
-all_labels = []
-
-# Color para las paredes: Azul
-wall_color = [0, 0, 255]
-
-# Color para las puertas: Rojo
-door_color = [255, 0, 0]
-
-# Color para las columnas: Verde
-column_color = [0, 255, 0]
 
 for wall in walls:
     matrix = ifcopenshell.util.placement.get_local_placement(wall.ObjectPlacement)
-    all_coordinates.append(matrix[:, 3][:3])
-    all_colors.append(wall_color)
-    all_labels.append("Wall")
+    all_coordinates.append((matrix[:, 3][:3], 1)) # 1 Representa pared
+
+    shape = ifcopenshell.geom.create_shape(settings, wall)
+    points = np.array(shape.geometry.verts).reshape(-1, 3)
+    indices_a_eliminar = [3 - 1, 8 - 1]
+    filtered_points = np.delete(points, indices_a_eliminar, axis=0)
+
+    for vert in filtered_points:
+        all_coordinates.append((vert, 1))
 
 for door in doors:
     matrix = ifcopenshell.util.placement.get_local_placement(door.ObjectPlacement)
-    all_coordinates.append(matrix[:, 3][:3])
-    all_colors.append(door_color)
-    all_labels.append("Door")
+    all_coordinates.append((matrix[:, 3][:3], 2)) # 2 Representa puerta
+
+    shape = ifcopenshell.geom.create_shape(settings, door)
+    points = np.array(shape.geometry.verts).reshape(-1, 3)
+
+    for vert in points:
+        all_coordinates.append((vert, 2))
+    
 
 for column in columns:
     matrix = ifcopenshell.util.placement.get_local_placement(column.ObjectPlacement)
-    all_coordinates.append(matrix[:, 3][:3])
-    all_colors.append(column_color)
-    all_labels.append("Column")
+    all_coordinates.append((matrix[:, 3][:3], 3)) # 3 Representa columna
 
-# Convertir las listas en matrices numpy
-all_coordinates = np.array(all_coordinates)
-all_colors = np.array(all_colors) / 255.0  # Normalizar los valores de color entre 0 y 1
+    shape = ifcopenshell.geom.create_shape(settings, column)
+    points = np.array(shape.geometry.verts).reshape(-1, 3)
 
-# Crear la nube de puntos y asignar coordenadas y colores
-point_cloud = o3d.geometry.PointCloud()
-point_cloud.points = o3d.utility.Vector3dVector(all_coordinates)
-point_cloud.colors = o3d.utility.Vector3dVector(all_colors)
+    for vert in points:
+        all_coordinates.append((vert, 3))
+    
+
+# Convertir la lista de coordenadas en una única matriz numpy
+#all_coordinates = np.array(all_coordinates)
+
+max_x = np.max([coord[0] for coord, _ in all_coordinates])
+max_y = np.max([coord[1] for coord, _ in all_coordinates])
+max_z = np.max([coord[2] for coord, _ in all_coordinates])
 
 
-# Crear un diccionario para almacenar las etiquetas como atributo adicional
-#point_cloud.point_labels = o3d.utility.Vector3dVector(all_labels)
+max_x = int(np.round(max_x))
+max_y = int(np.round(max_y))
+max_z = int(np.round(max_z))
 
-# Guardar la nube de puntos en un archivo .pcd
-o3d.io.write_point_cloud("nube_de_puntos_con_etiquetas.pcd", point_cloud)
+#print("Coordenadas máximas:")
+#print("X más alta:", max_x)
+#print("Y más alta:", max_y)
+#print("Z más alta:", max_z)
+
+
+resolution = 1
+
+zero_array = np.zeros(((max_x * resolution) + 1, (max_y * resolution) + 1, (max_z * resolution) + 1))
+
+for coord, elem_type in all_coordinates:
+    rounded_coord = tuple(round(value) for value in coord)
+    x, y, z = rounded_coord * resolution
+    zero_array[x, y, z] = elem_type
+
+print(zero_array)
+

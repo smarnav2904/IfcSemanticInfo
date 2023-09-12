@@ -1,0 +1,6 @@
+1.Descargar el repositorio completo
+2.Compilar el Dockerfile con el comando "docker build -t "nordic" .
+3.Crear una carpeta llamada exchange
+4.Modificar run_container.bash para que apunte a la carpeta es vuestro equipo
+5.Ejecutarlo con ./run_container.bash
+6.Podeis poner todos los archivos o repos que querais en la carpeta exchange, estos seran accesibles desde el docker

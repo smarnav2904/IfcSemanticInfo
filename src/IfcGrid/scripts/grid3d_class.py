@@ -21,6 +21,7 @@ class grid3d():
         self.walls = self.model.by_type('IfcWall')
         self.doors = self.model.by_type('IfcDoor')
         self.columns = self.model.by_type('IfcColumn')
+        self.solids = self.model.by_type('IfcExtrudedAreaSolid')
 
         rospy.loginfo("Termina carga de IFC")
         self.world_size_x = rospy.get_param('~world_size_x', 220)
@@ -110,7 +111,7 @@ class grid3d():
                     for z in range(min_z_local, max_z_local + 1):
                         self.semantic_grid[x, y, z] = 2
                         self.occ_grid[x, y, z] = 1
-                        rospy.loginfo("Puerta rellenada")
+                        
     
         for column in self.columns:
             matrix = ifcopenshell.util.placement.get_local_placement(column.ObjectPlacement)
@@ -144,8 +145,18 @@ class grid3d():
                     for z in range(min_z_local, max_z_local + 1):
                         self.semantic_grid[x, y, z] = 3
                         self.occ_grid[x, y, z] = 1
-                        rospy.loginfo("Columna rellenada")
+                        
     
+        for step in self.solids:
+            matrix = ifcopenshell.util.placement.get_axis2placement(step.Position)
+            matrix = matrix[:,3][:3]
+            if not np.all(matrix == 0):
+                rospy.loginfo(f"x: {x}, y: {y}, z: {z}")
+                rospy.loginfo(f"x type: {type(x)}, y type: {type(y)}, z type: {type(z)}")
+
+                x, y, z = np.round(matrix)
+                self.semantic_grid[int(x), int(y), int(z)] = 4
+                self.occ_grid[int(x), int(y), int(z)] = 1
 
     rospy.loginfo("Termina de rellenar las matrices")
 

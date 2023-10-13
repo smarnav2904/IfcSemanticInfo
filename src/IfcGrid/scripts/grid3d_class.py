@@ -8,6 +8,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
+from mayavi import mlab
 from std_msgs.msg import Int32MultiArray, MultiArrayDimension, MultiArrayLayout
 from IfcGrid.srv import *
 
@@ -314,6 +315,12 @@ class grid3d():
                             self.occ_grid[x, y, z] = 1
     rospy.loginfo("Termina de rellenar las matrices")
 
+    def showgrid(self):
+        mlab.figure(bgcolor=(1, 1, 1))  # Configura el color de fondo
+        contour = mlab.contour3d(self.occ_grid, color=(1, 0.2, 0.2), opacity=0.5, transparent=True)
+        mlab.colorbar(contour, title='Valor')
+        mlab.show()
+
     def get_semantic_grid(self, request):
         response = GetSemanticGridResponse()
         layout = self.create_layout()
@@ -398,6 +405,8 @@ class grid3d():
         layout.data_offset = 0  # This is usually 0
 
         return layout
+    
+    
 
     
 if __name__ == '__main__':
@@ -405,7 +414,7 @@ if __name__ == '__main__':
         rospy.init_node("semantic_grid", anonymous=False)
 
         g = grid3d()
-
+        g.showgrid()
         rospy.loginfo("Semantic Grid Avaliable")
         print("Semantic Grid Avaliable")
         service = rospy.Service('get_semantic_grid', GetSemanticGrid, g.get_semantic_grid)

@@ -8,7 +8,6 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
-from mayavi import mlab
 from std_msgs.msg import Int32MultiArray, MultiArrayDimension, MultiArrayLayout
 from IfcGrid.srv import *
 
